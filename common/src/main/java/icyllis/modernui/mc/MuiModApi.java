@@ -19,8 +19,8 @@
 package icyllis.modernui.mc;
 
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.GpuDevice;
-import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.renderpearl.api.device.GpuDevice;
+import com.mojang.renderpearl.api.textures.GpuTexture;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
@@ -432,9 +432,12 @@ public abstract class MuiModApi {
     private static final ChatFormatting[] FORMATTING_TABLE = new ChatFormatting[128];
 
     static {
-        for (ChatFormatting f : ChatFormatting.values()) {
-            FORMATTING_TABLE[f.getChar()] = f;
-            FORMATTING_TABLE[Character.toUpperCase(f.getChar())] = f;
+        for (char c = 0; c < 128; c++) {
+            ChatFormatting f = ChatFormatting.getByCode(c);
+            if (f != null) {
+                FORMATTING_TABLE[c] = f;
+                FORMATTING_TABLE[Character.toUpperCase(c)] = f;
+            }
         }
     }
 

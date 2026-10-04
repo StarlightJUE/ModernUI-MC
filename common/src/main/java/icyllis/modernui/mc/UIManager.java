@@ -18,14 +18,13 @@
 
 package icyllis.modernui.mc;
 
-import com.mojang.blaze3d.opengl.GlStateManager;
-import com.mojang.blaze3d.opengl.GlTextureView;
+import com.mojang.renderpearl.backend.opengl.GlStateManager;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.*;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.*;
@@ -160,7 +159,7 @@ public abstract class UIManager implements LifecycleOwner {
     private long mLastPurgeNanos;
 
     private GlTexture_Wrapped mLayerTexture;
-    private GlTextureView mLayerTextureView;
+    private GpuTextureView mLayerTextureView;
 
     private GpuTexture mLayerTexture_Vulkan;
     private GpuTextureView mLayerTextureView_Vulkan;
@@ -289,7 +288,7 @@ public abstract class UIManager implements LifecycleOwner {
                 minecraft.player.closeContainer();
             }
         } else {
-            minecraft.setScreen(screen.getPreviousScreen());
+            minecraft.gui.setScreen(screen.getPreviousScreen());
         }
     }
 
@@ -365,7 +364,7 @@ public abstract class UIManager implements LifecycleOwner {
         // ensure it's resized
         resize(minecraft.getWindow().getWidth(), minecraft.getWindow().getHeight());
         //TODO core framework lacks IME support
-        minecraft.textInputManager().startTextInput();
+        minecraft.textInputManager().startTextInput(this);
     }
 
     @UiThread
@@ -540,8 +539,8 @@ public abstract class UIManager implements LifecycleOwner {
             if (minecraft.hasControlDown()) {
                 mods |= KeyEvent.META_CONTROL_ON;
             }
-            if (InputConstants.isKeyDown(window, InputConstants.KEY_LSUPER) ||
-                    InputConstants.isKeyDown(window, InputConstants.KEY_RSUPER)) {
+            if (InputConstants.isKeyDown(InputConstants.KEY_LGUI) ||
+                    InputConstants.isKeyDown(InputConstants.KEY_RGUI)) {
                 mods |= KeyEvent.META_SUPER_ON;
             }
             if (minecraft.hasShiftDown()) {
@@ -558,7 +557,7 @@ public abstract class UIManager implements LifecycleOwner {
     public void onPostMouseInput(int button, int action, int mods) {
         // We should ensure (overlay == null && screen != null)
         // and the screen must be a mui screen
-        if (minecraft.getOverlay() == null && mScreen != null) {
+        if (minecraft.gui.overlay() == null && mScreen != null) {
             //ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
             final long now = Core.timeNanos();
             float x = (float) (minecraft.mouseHandler.xpos() *
@@ -785,10 +784,10 @@ public abstract class UIManager implements LifecycleOwner {
     }*/
 
     protected void changeRadialBlur() {
-        if (minecraft.gameRenderer.currentPostEffect() == null) {
+        if (minecraft.gameRenderer.getAppliedPostEffects().isEmpty()) {
             LOGGER.info(MARKER, "Load post-processing effect");
             final Identifier effect;
-            if (InputConstants.isKeyDown(minecraft.getWindow(), GLFW_KEY_RIGHT_SHIFT)) {
+            if (InputConstants.isKeyDown(InputConstants.KEY_RSHIFT)) {
                 effect = ModernUIMod.location("grayscale");
             } else {
                 effect = ModernUIMod.location("radial_blur");
@@ -796,7 +795,7 @@ public abstract class UIManager implements LifecycleOwner {
             MuiModApi.get().loadEffect(minecraft.gameRenderer, effect);
         } else {
             LOGGER.info(MARKER, "Stop post-processing effect");
-            minecraft.gameRenderer.clearPostEffect();
+            minecraft.gameRenderer.getRequestedPostEffects().clear();
         }
     }
 
@@ -806,14 +805,14 @@ public abstract class UIManager implements LifecycleOwner {
             dump(w, true);
         }
         String str = builder.toString();
-        if (minecraft.level != null) {
+        if (minecraft.level != null && minecraft.gui != null && minecraft.gui.hud != null && minecraft.gui.hud.getChat() != null) {
             /*try {
                 SEND_TO_CHAT.invoke(minecraft.gui.getChat(), ,
                         0xCBD366, minecraft.gui.getGuiTicks(), false);
 
             } catch (IllegalAccessException | InvocationTargetException ignored) {
             }*/
-            minecraft.gui.getChat().addClientSystemMessage(Component.literal(str).withStyle(ChatFormatting.GRAY));
+            minecraft.gui.hud.getChat().addClientSystemMessage(Component.literal(str).withStyle(ChatFormatting.GRAY));
         }
         LOGGER.info(MARKER, str);
     }
@@ -839,7 +838,7 @@ public abstract class UIManager implements LifecycleOwner {
             pw.println((Object) null);
         }
 
-        Screen screen = minecraft.screen;
+        Screen screen = minecraft.gui.screen();
         if (screen != null) {
             pw.print("Screen: ");
             pw.println(screen.getClass());
@@ -951,7 +950,7 @@ public abstract class UIManager implements LifecycleOwner {
             GL33C.glDisable(GL33C.GL_SCISSOR_TEST);
             GlStateManager._blendFuncSeparate(GL33C.GL_SRC_ALPHA, GL33C.GL_ONE_MINUS_SRC_ALPHA, GL33C.GL_ONE, GL33C.GL_ZERO);
             GL33C.glBlendFuncSeparate(GL33C.GL_SRC_ALPHA, GL33C.GL_ONE_MINUS_SRC_ALPHA, GL33C.GL_ONE, GL33C.GL_ZERO);
-            GlStateManager._enableBlend();
+            GlStateManager._enableBlend(0);
             GL33C.glEnable(GL33C.GL_BLEND);
             GL33C.glBlendEquation(GL33C.GL_FUNC_ADD);
             GlStateManager._disableDepthTest();
@@ -983,7 +982,7 @@ public abstract class UIManager implements LifecycleOwner {
                     }
                     layer.ref();
                     mLayerTexture = new GlTexture_Wrapped(layer); // move
-                    mLayerTextureView = (GlTextureView) RenderSystem.getDevice()
+                    mLayerTextureView = RenderSystem.getDevice()
                             .createTextureView(mLayerTexture);
                 } else {
                     // ensure there's ref before submitting to the GPU
@@ -1132,7 +1131,7 @@ public abstract class UIManager implements LifecycleOwner {
 
     public void renderAbove(GuiRenderState guiRenderState) {
         if (minecraft.isRunning() && mRunning &&
-                mScreen == null && minecraft.getOverlay() == null) {
+                mScreen == null && minecraft.gui.overlay() == null) {
             // Render the UI above everything
             render(new GuiGraphicsExtractor(minecraft, guiRenderState, 0, 0), 0, 0, 0);
         }
@@ -1218,7 +1217,7 @@ public abstract class UIManager implements LifecycleOwner {
                     sb.appendCodePoint(cp++);
                 }
                 mTestCodepoint = end;
-                minecraft.gui.getChat().addClientSystemMessage(Component.literal(sb.toString()));
+                minecraft.gui.hud.getChat().addClientSystemMessage(Component.literal(sb.toString()));
             }
         }
     }

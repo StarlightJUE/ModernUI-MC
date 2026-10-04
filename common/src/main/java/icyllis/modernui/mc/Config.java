@@ -449,22 +449,22 @@ public final class Config {
                 Window window = Minecraft.getInstance().getWindow();
                 switch (this) {
                     case FULLSCREEN -> {
-                        if (!window.isFullscreen()) {
-                            window.toggleFullScreen();
+                        if (!Minecraft.getInstance().options.fullscreen().get()) {
+                            window.setFullscreen(true);
                         }
                     }
                     case FULLSCREEN_BORDERLESS -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
+                        if (Minecraft.getInstance().options.fullscreen().get()) {
+                            window.setFullscreen(false);
                         }
                         GLFW.glfwRestoreWindow(window.handle());
                         GLFW.glfwSetWindowAttrib(window.handle(),
                                 GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
                         Monitor monitor = window.findBestMonitor();
                         if (monitor != null) {
-                            VideoMode videoMode = monitor.getCurrentMode();
-                            int x = monitor.getX();
-                            int y = monitor.getY();
+                            VideoMode videoMode = monitor.currentMode();
+                            int x = monitor.x();
+                            int y = monitor.y();
                             int width = videoMode.getWidth();
                             int height = videoMode.getHeight();
                             GLFW.glfwSetWindowMonitor(window.handle(), MemoryUtil.NULL,
@@ -474,8 +474,8 @@ public final class Config {
                         }
                     }
                     case MAXIMIZED -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
+                        if (Minecraft.getInstance().options.fullscreen().get()) {
+                            window.setFullscreen(false);
                         }
                         GLFW.glfwRestoreWindow(window.handle());
                         GLFW.glfwSetWindowAttrib(window.handle(),
@@ -483,8 +483,8 @@ public final class Config {
                         GLFW.glfwMaximizeWindow(window.handle());
                     }
                     case MAXIMIZED_BORDERLESS -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
+                        if (Minecraft.getInstance().options.fullscreen().get()) {
+                            window.setFullscreen(false);
                         }
                         GLFW.glfwRestoreWindow(window.handle());
                         GLFW.glfwSetWindowAttrib(window.handle(),
@@ -492,16 +492,16 @@ public final class Config {
                         GLFW.glfwMaximizeWindow(window.handle());
                     }
                     case WINDOWED -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
+                        if (Minecraft.getInstance().options.fullscreen().get()) {
+                            window.setFullscreen(false);
                         }
                         GLFW.glfwSetWindowAttrib(window.handle(),
                                 GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
                         GLFW.glfwRestoreWindow(window.handle());
                     }
                     case WINDOWED_BORDERLESS -> {
-                        if (window.isFullscreen()) {
-                            window.toggleFullScreen();
+                        if (Minecraft.getInstance().options.fullscreen().get()) {
+                            window.setFullscreen(false);
                         }
                         GLFW.glfwSetWindowAttrib(window.handle(),
                                 GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);

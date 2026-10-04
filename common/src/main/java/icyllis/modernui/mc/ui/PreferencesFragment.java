@@ -43,6 +43,7 @@ import icyllis.modernui.mc.ModernUIMod;
 import icyllis.modernui.mc.MuiModApi;
 import icyllis.modernui.mc.MuiPlatform;
 import icyllis.modernui.mc.UIManager;
+import net.minecraft.locale.Language;
 import icyllis.modernui.resources.TypedValue;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.InputFilter;
@@ -864,7 +865,7 @@ public class PreferencesFragment extends Fragment {
         layout.setLayoutParams(params);
 
         String tooltip = name + ".tooltip";
-        if (I18n.exists(tooltip)) {
+        if (Language.getInstance().has(tooltip)) {
             layout.setTooltipText(I18n.get(tooltip));
         }
         layout.setMinimumHeight(layout.dp(44));
@@ -1119,7 +1120,7 @@ public class PreferencesFragment extends Fragment {
         layout.setLayoutParams(params);
 
         String tooltip = name + ".tooltip";
-        if (I18n.exists(tooltip)) {
+        if (Language.getInstance().has(tooltip)) {
             layout.setTooltipText(I18n.get(tooltip));
         }
         layout.setMinimumHeight(layout.dp(44));
@@ -1646,7 +1647,7 @@ public class PreferencesFragment extends Fragment {
                 title.setTextSize(14);
 
                 String tooltip = name + ".tooltip";
-                if (I18n.exists(tooltip)) {
+                if (Language.getInstance().has(tooltip)) {
                     title.setTooltipText(I18n.get(tooltip));
                 }
 
@@ -1791,7 +1792,7 @@ public class PreferencesFragment extends Fragment {
                 title.setMinWidth(option.dp(60));
 
                 String tooltip = name + ".tooltip";
-                if (I18n.exists(tooltip)) {
+                if (Language.getInstance().has(tooltip)) {
                     title.setTooltipText(I18n.get(tooltip));
                 }
 

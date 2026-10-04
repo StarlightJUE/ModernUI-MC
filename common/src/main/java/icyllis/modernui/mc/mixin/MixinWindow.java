@@ -82,13 +82,12 @@ public abstract class MixinWindow {
         if (monitor != null) {
             // physical DPI is usually not necessary...
             try {
-                int[] w = {0}, h = {0};
-                org.lwjgl.glfw.GLFW.glfwGetMonitorPhysicalSize(monitor.getMonitor(), w, h);
-                VideoMode mode = monitor.getCurrentMode();
-                metrics.xdpi = 25.4f * mode.getWidth() / w[0];
-                metrics.ydpi = 25.4f * mode.getHeight() / h[0];
-            } catch (NoSuchMethodError ignored) {
-                // the method is missing in PojavLauncher-modified GLFW
+                VideoMode mode = monitor.currentMode();
+                if (monitor.w() > 0 && monitor.h() > 0) {
+                    metrics.xdpi = 25.4f * mode.getWidth() / monitor.w();
+                    metrics.ydpi = 25.4f * mode.getHeight() / monitor.h();
+                }
+            } catch (Exception ignored) {
             }
         }
         var ctx = ModernUI.getInstance();

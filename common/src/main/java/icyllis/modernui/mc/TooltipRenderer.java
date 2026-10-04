@@ -18,7 +18,7 @@
 
 package icyllis.modernui.mc;
 
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.modernui.graphics.Color;

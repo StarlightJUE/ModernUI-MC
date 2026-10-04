@@ -18,20 +18,18 @@
 
 package icyllis.modernui.mc.text;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.UniformType;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import icyllis.modernui.mc.ModernUIMod;
 import icyllis.modernui.mc.MuiModApi;
-import icyllis.modernui.mc.text.mixin.AccessBufferSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.RenderPipelines;
@@ -66,13 +64,9 @@ public abstract class TextRenderType {
     public static final RenderPipeline.Snippet PIPELINE_SNIPPET = RenderPipeline.builder()
             .withVertexShader(Identifier.withDefaultNamespace("core/rendertype_text_intensity"))
             .withFragmentShader(ModernUIMod.location("core/rendertype_modern_text_normal"))
-            .withUniform("Fog", UniformType.UNIFORM_BUFFER)
-            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-            .withSampler("Sampler0")
-            .withSampler("Sampler2")
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS)
             .buildSnippet();
 
     public static final RenderPipeline PIPELINE_NORMAL = RenderPipeline.builder(PIPELINE_SNIPPET)
@@ -87,13 +81,9 @@ public abstract class TextRenderType {
 
     public static final RenderPipeline.Snippet PIPELINE_SDF_SNIPPET = RenderPipeline.builder()
             .withVertexShader(Identifier.withDefaultNamespace("core/rendertype_text_intensity"))
-            .withUniform("Fog", UniformType.UNIFORM_BUFFER)
-            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-            .withSampler("Sampler0")
-            .withSampler("Sampler2")
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP)
+            .withPrimitiveTopology(PrimitiveTopology.QUADS)
             .buildSnippet();
 
     public static final RenderPipeline PIPELINE_SDF_FILL = RenderPipeline.builder(PIPELINE_SDF_SNIPPET)
@@ -370,14 +360,6 @@ public abstract class TextRenderType {
         if (sFirstSDFFillType == null) {
             assert (sSDFFillTypes.isEmpty());
             sFirstSDFFillType = renderType;
-            if (TextLayoutEngine.sUseTextShadersInWorld) {
-                try {
-                    ((AccessBufferSource) Minecraft.getInstance().renderBuffers().bufferSource()).getFixedBuffers()
-                            .put(renderType, sFirstSDFFillBuffer);
-                } catch (Exception e) {
-                    LOGGER.warn(MARKER, "Failed to add SDF fill to fixed buffers", e);
-                }
-            }
         }
         return renderType;
     }
@@ -407,14 +389,6 @@ public abstract class TextRenderType {
         if (sFirstSDFStrokeType == null) {
             assert (sSDFStrokeTypes.isEmpty());
             sFirstSDFStrokeType = renderType;
-            if (TextLayoutEngine.sUseTextShadersInWorld) {
-                try {
-                    ((AccessBufferSource) Minecraft.getInstance().renderBuffers().bufferSource()).getFixedBuffers()
-                            .put(renderType, sFirstSDFStrokeBuffer);
-                } catch (Exception e) {
-                    LOGGER.warn(MARKER, "Failed to add SDF stroke to fixed buffers", e);
-                }
-            }
         }
         return renderType;
     }
@@ -482,24 +456,8 @@ public abstract class TextRenderType {
     }*/
 
     public static synchronized void clear(boolean cleanup) {
-        if (sFirstSDFFillType != null) {
-            assert (!sSDFFillTypes.isEmpty());
-            var access = (AccessBufferSource) Minecraft.getInstance().renderBuffers().bufferSource();
-            try {
-                access.getFixedBuffers().remove(sFirstSDFFillType, sFirstSDFFillBuffer);
-            } catch (Exception ignored) {
-            }
-            sFirstSDFFillType = null;
-        }
-        if (sFirstSDFStrokeType != null) {
-            assert (!sSDFStrokeTypes.isEmpty());
-            var access = (AccessBufferSource) Minecraft.getInstance().renderBuffers().bufferSource();
-            try {
-                access.getFixedBuffers().remove(sFirstSDFStrokeType, sFirstSDFStrokeBuffer);
-            } catch (Exception ignored) {
-            }
-            sFirstSDFStrokeType = null;
-        }
+        sFirstSDFFillType = null;
+        sFirstSDFStrokeType = null;
         sNormalTypes.clear();
         sSDFFillTypes.clear();
         sSDFStrokeTypes.clear();

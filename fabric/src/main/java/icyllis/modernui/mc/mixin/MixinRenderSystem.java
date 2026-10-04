@@ -18,7 +18,7 @@
 
 package icyllis.modernui.mc.mixin;
 
-import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.arc3d.engine.ContextOptions;
 import icyllis.modernui.core.Core;
@@ -64,7 +64,7 @@ public class MixinRenderSystem {
             options.mAllowGLSPIRV = Boolean.parseBoolean(value);
         }
         options.mDriverBugWorkarounds = ModernUIClient.getGpuDriverBugWorkarounds();
-        switch (device.getBackendName()) {
+        switch (device.getDeviceInfo().backendName()) {
             case "OpenGL" -> {
                 if (!Core.initOpenGL(options)) {
                     throw new IllegalStateException("Failed to create OpenGL device");

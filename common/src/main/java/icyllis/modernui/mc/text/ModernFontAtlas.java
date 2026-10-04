@@ -18,14 +18,14 @@
 
 package icyllis.modernui.mc.text;
 
-import com.mojang.blaze3d.opengl.GlTexture;
+import com.mojang.renderpearl.backend.opengl.GlTexture;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.AddressMode;
-import com.mojang.blaze3d.textures.FilterMode;
-import com.mojang.blaze3d.textures.GpuTexture;
-import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.renderpearl.api.textures.AddressMode;
+import com.mojang.renderpearl.api.textures.FilterMode;
+import com.mojang.renderpearl.api.textures.GpuTexture;
+import com.mojang.renderpearl.api.GpuFormat;
 import icyllis.arc3d.core.MathUtil;
 import icyllis.arc3d.core.Rect2i;
 import icyllis.arc3d.core.RectanglePacker;
@@ -126,7 +126,7 @@ public class ModernFontAtlas extends AbstractTexture implements Dumpable {
         mBorderWidth = borderWidth;
         // 64MB at most
         mMaxTextureSize = Math.min(
-                RenderSystem.getDevice().getMaxTextureSize(),
+                RenderSystem.getDevice().getDeviceInfo().limits().maxTextureSize(),
                 maskFormat == Engine.MASK_FORMAT_A8
                         ? 8192
                         : 4096
@@ -202,19 +202,18 @@ public class ModernFontAtlas extends AbstractTexture implements Dumpable {
         }
 
         // include border
-        NativeImage.Format format = mMaskFormat == Engine.MASK_FORMAT_ARGB
-                ? NativeImage.Format.RGBA
-                : NativeImage.Format.LUMINANCE;
+        int bpp = mMaskFormat == Engine.MASK_FORMAT_ARGB ? 4 : 1;
         var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
-        commandEncoder.writeToTexture(getTexture(), pixels, format,
-                0, 0, rect.x(), rect.y(),
-                rect.width(), rect.height());
+        commandEncoder.writeToTexture(getTexture(), pixels,
+                0, rect.x(), rect.y(),
+                rect.width(), rect.height(),
+                rect.width() * bpp);
         if (mUseMipmaps) {
             assert mipPixels != null;
-            commandEncoder.writeToTexture(getTexture(), mipPixels,
-                    1, 0, rect.x() / 2, rect.y() / 2,
+            commandEncoder.writeToTexture(getTexture(), mipPixels.getPixelBytes(),
+                    1, rect.x() / 2, rect.y() / 2,
                     rect.width() / 2, rect.height() / 2,
-                    0, 0);
+                    (rect.width() / 2) * bpp);
         }
         /*int rowBytes = rect.width() * ColorInfo.bytesPerPixel(colorType);
         boolean res = ((GLDevice) mContext.getDevice()).writePixels(
@@ -333,7 +332,7 @@ public class ModernFontAtlas extends AbstractTexture implements Dumpable {
         if (mMaskFormat == Engine.MASK_FORMAT_A8) {
             // Minecraft's OpenGL backend has no real texture view,
             // but if on Vulkan, we have to modify the VkImageView
-            switch (RenderSystem.getDevice().getBackendName()) {
+            switch (RenderSystem.getDevice().getDeviceInfo().backendName()) {
                 case "OpenGL" -> {
                     int boundTexture = glGetInteger(GL_TEXTURE_BINDING_2D);
                     glBindTexture(GL_TEXTURE_2D, ((GlTexture) texture).glId());
@@ -377,8 +376,8 @@ public class ModernFontAtlas extends AbstractTexture implements Dumpable {
                 "ModernUI_MC_FontAtlas" + mMaskFormat,
                 GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_COPY_SRC | GpuTexture.USAGE_TEXTURE_BINDING,
                 switch (mMaskFormat) {
-                    case Engine.MASK_FORMAT_A8 -> TextureFormat.RED8;
-                    case Engine.MASK_FORMAT_ARGB -> TextureFormat.RGBA8;
+                    case Engine.MASK_FORMAT_A8 -> GpuFormat.R8_UNORM;
+                    case Engine.MASK_FORMAT_ARGB -> GpuFormat.RGBA8_UNORM;
                     default -> throw new AssertionError(mMaskFormat);
                 },
                 mWidth, mHeight,
