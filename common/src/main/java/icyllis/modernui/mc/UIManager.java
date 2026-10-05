@@ -92,8 +92,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.cursor.CursorType;
 import static icyllis.modernui.mc.ModernUIMod.LOGGER;
-import static org.lwjgl.glfw.GLFW.*;
 
 /**
  * Manage UI thread and connect Minecraft to Modern UI view system at most bottom level.
@@ -564,16 +565,15 @@ public abstract class UIManager implements LifecycleOwner {
                     minecraft.getWindow().getWidth() / minecraft.getWindow().getScreenWidth());
             float y = (float) (minecraft.mouseHandler.ypos() *
                     minecraft.getWindow().getHeight() / minecraft.getWindow().getScreenHeight());
-            int buttonState = 0;
-            for (int i = 0; i < 5; i++) {
-                if (glfwGetMouseButton(minecraft.getWindow().handle(), i) == GLFW_PRESS) {
-                    buttonState |= 1 << i;
-                }
+            if (action == InputConstants.PRESS) {
+                mButtonState |= (1 << button);
+            } else if (action == InputConstants.RELEASE) {
+                mButtonState &= ~(1 << button);
             }
-            mButtonState = buttonState;
-            int hoverAction = action == GLFW_PRESS ?
+            int buttonState = mButtonState;
+            int hoverAction = action == InputConstants.PRESS ?
                     MotionEvent.ACTION_BUTTON_PRESS : MotionEvent.ACTION_BUTTON_RELEASE;
-            int touchAction = action == GLFW_PRESS ?
+            int touchAction = action == InputConstants.PRESS ?
                     MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP;
             int actionButton = 1 << button;
             MotionEvent ev = MotionEvent.obtain(now, hoverAction, actionButton,
@@ -603,31 +603,31 @@ public abstract class UIManager implements LifecycleOwner {
 
     protected void onPreKeyInput(int action, net.minecraft.client.input.KeyEvent event) {
         if (TooltipRenderer.sTooltip) {
-            if (action != GLFW_RELEASE) {
+            if (action != InputConstants.RELEASE) {
                 switch (event.key()) {
-                    case GLFW_KEY_UP -> mTooltipRenderer.updateArrowMovement(-1);
-                    case GLFW_KEY_DOWN -> mTooltipRenderer.updateArrowMovement(1);
+                    case InputConstants.KEY_UP -> mTooltipRenderer.updateArrowMovement(-1);
+                    case InputConstants.KEY_DOWN -> mTooltipRenderer.updateArrowMovement(1);
                 }
             }
         }
         if (!event.hasControlDownWithQuirk() || !event.hasShiftDown() || !ModernUIMod.isDeveloperMode()) {
             return;
         }
-        if (action == GLFW_PRESS) {
+        if (action == InputConstants.PRESS) {
             switch (event.key()) {
-                case GLFW_KEY_Y -> takeScreenshot();
+                case InputConstants.KEY_Y -> takeScreenshot();
                 //case GLFW_KEY_H -> open(new TestFragment());
                 //case GLFW_KEY_J -> open(new TestPauseFragment());
-                case GLFW_KEY_U -> {
+                case InputConstants.KEY_U -> {
                     mClearNextMainTarget = true;
                 }
-                case GLFW_KEY_I -> {
+                case InputConstants.KEY_I -> {
                     mTestChars ^= true;
                 }
-                case GLFW_KEY_N -> mDecor.postInvalidate();
-                case GLFW_KEY_P -> dump();
-                case GLFW_KEY_M -> changeRadialBlur();
-                case GLFW_KEY_T -> {
+                case InputConstants.KEY_N -> mDecor.postInvalidate();
+                case InputConstants.KEY_P -> dump();
+                case InputConstants.KEY_M -> changeRadialBlur();
+                case InputConstants.KEY_T -> {
                     /*String text = "\u09b9\u09cd\u09af\u09be\n\u09b2\u09cb" + ChatFormatting.RED + "\uD83E\uDD14" +
                             ChatFormatting.BOLD + "\uD83E\uDD14\uD83E\uDD14";
                     for (int i = 1; i <= 10; i++) {
@@ -654,7 +654,7 @@ public abstract class UIManager implements LifecycleOwner {
                         }*/
                     }
                 }
-                case GLFW_KEY_G -> {
+                case InputConstants.KEY_G -> {
                 /*if (minecraft.screen == null && minecraft.isLocalServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
                     start(new TestPauseUI());
@@ -666,21 +666,21 @@ public abstract class UIManager implements LifecycleOwner {
                             GlyphManager.getInstance().debug();
                         }
                 }
-                case GLFW_KEY_V -> {
+                case InputConstants.KEY_V -> {
                     if (ModernUIMod.isTextEngineEnabled()) {
                         //TextLayoutEngine.getInstance().dumpEmojiAtlas();
                         TextLayoutEngine.getInstance().dumpBitmapFonts();
                     }
                 }
-                case GLFW_KEY_O -> mNoRender = !mNoRender;
-                case GLFW_KEY_F -> System.gc();
+                case InputConstants.KEY_O -> mNoRender = !mNoRender;
+                case InputConstants.KEY_F -> System.gc();
             }
         }
     }
 
     public void onGameLoadFinished() {
         if (sDingEnabled) {
-            glfwRequestWindowAttention(minecraft.getWindow().handle());
+            // glfwRequestWindowAttention(minecraft.getWindow().handle());
             final String sound = sDingSound;
             final float volume = sDingVolume;
             if (volume > 0) {
@@ -1077,7 +1077,7 @@ public abstract class UIManager implements LifecycleOwner {
         mRoot.mHandler.post(this::restoreLayoutTransition);
         mRoot.mRawDrawHandlers.clear();
         mScreen = null;
-        glfwSetCursor(minecraft.getWindow().handle(), MemoryUtil.NULL);
+        minecraft.getWindow().selectCursor(CursorType.DEFAULT);
         minecraft.textInputManager().stopTextInput();
     }
 
@@ -1465,8 +1465,7 @@ public abstract class UIManager implements LifecycleOwner {
 
         @MainThread
         protected void applyPointerIcon(int pointerType) {
-            minecraft.schedule(() -> glfwSetCursor(minecraft.getWindow().handle(),
-                    PointerIcon.getSystemIcon(pointerType).getHandle()));
+            // Cursor icon customization on SDL3 backend
         }
 
         @Override

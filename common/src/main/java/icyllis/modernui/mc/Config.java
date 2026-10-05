@@ -18,8 +18,6 @@
 
 package icyllis.modernui.mc;
 
-import com.mojang.blaze3d.platform.Monitor;
-import com.mojang.blaze3d.platform.VideoMode;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
@@ -45,8 +43,6 @@ import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import org.jetbrains.annotations.ApiStatus;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -453,59 +449,8 @@ public final class Config {
                             window.setFullscreen(true);
                         }
                     }
-                    case FULLSCREEN_BORDERLESS -> {
-                        if (Minecraft.getInstance().options.fullscreen().get()) {
-                            window.setFullscreen(false);
-                        }
-                        GLFW.glfwRestoreWindow(window.handle());
-                        GLFW.glfwSetWindowAttrib(window.handle(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                        Monitor monitor = window.findBestMonitor();
-                        if (monitor != null) {
-                            VideoMode videoMode = monitor.currentMode();
-                            int x = monitor.x();
-                            int y = monitor.y();
-                            int width = videoMode.getWidth();
-                            int height = videoMode.getHeight();
-                            GLFW.glfwSetWindowMonitor(window.handle(), MemoryUtil.NULL,
-                                    x, y, width, height, GLFW.GLFW_DONT_CARE);
-                        } else {
-                            GLFW.glfwMaximizeWindow(window.handle());
-                        }
-                    }
-                    case MAXIMIZED -> {
-                        if (Minecraft.getInstance().options.fullscreen().get()) {
-                            window.setFullscreen(false);
-                        }
-                        GLFW.glfwRestoreWindow(window.handle());
-                        GLFW.glfwSetWindowAttrib(window.handle(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                        GLFW.glfwMaximizeWindow(window.handle());
-                    }
-                    case MAXIMIZED_BORDERLESS -> {
-                        if (Minecraft.getInstance().options.fullscreen().get()) {
-                            window.setFullscreen(false);
-                        }
-                        GLFW.glfwRestoreWindow(window.handle());
-                        GLFW.glfwSetWindowAttrib(window.handle(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                        GLFW.glfwMaximizeWindow(window.handle());
-                    }
-                    case WINDOWED -> {
-                        if (Minecraft.getInstance().options.fullscreen().get()) {
-                            window.setFullscreen(false);
-                        }
-                        GLFW.glfwSetWindowAttrib(window.handle(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                        GLFW.glfwRestoreWindow(window.handle());
-                    }
-                    case WINDOWED_BORDERLESS -> {
-                        if (Minecraft.getInstance().options.fullscreen().get()) {
-                            window.setFullscreen(false);
-                        }
-                        GLFW.glfwSetWindowAttrib(window.handle(),
-                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                        GLFW.glfwRestoreWindow(window.handle());
+                    case FULLSCREEN_BORDERLESS, MAXIMIZED, MAXIMIZED_BORDERLESS, WINDOWED, WINDOWED_BORDERLESS -> {
+                        LOGGER.warn(MARKER, "Custom window mode {} is not supported on SDL3 backend", this);
                     }
                 }
             }

@@ -53,7 +53,15 @@ public class MixinRenderSystem {
 
     @Inject(method = "initRenderer", at = @At("TAIL"), remap = false)
     private static void onInitRenderer(GpuDevice device, CallbackInfo ci) {
-        Core.initialize();
+        try {
+            var field = Core.class.getDeclaredField("sMainThread");
+            field.setAccessible(true);
+            if (field.get(null) == null) {
+                field.set(null, Thread.currentThread());
+            }
+        } catch (Exception e) {
+            ModernUIMod.LOGGER.error(ModernUIMod.MARKER, "Failed to initialize Core main thread", e);
+        }
         ContextOptions options = new ContextOptions();
         String value = ModernUIClient.getBootstrapProperty(ModernUIClient.BOOTSTRAP_USE_STAGING_BUFFERS_IN_OPENGL);
         if (value != null) {
