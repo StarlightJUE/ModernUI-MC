@@ -23,7 +23,6 @@ import com.mojang.renderpearl.api.device.GpuDevice;
 import com.mojang.renderpearl.api.textures.GpuTexture;
 import icyllis.modernui.mc.ModernUIMod;
 import icyllis.modernui.mc.MuiModApi;
-import icyllis.modernui.mc.mixin.AccessGameRenderer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
@@ -45,7 +44,7 @@ public final class MuiFabricApi extends MuiModApi {
 
     @Override
     public void loadEffect(GameRenderer gr, Identifier effect) {
-        ((AccessGameRenderer) gr).invokeSetPostEffect(effect);
+        gr.getRequestedPostEffects().add(effect);
     }
 
     /*@Override
