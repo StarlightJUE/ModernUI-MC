@@ -297,16 +297,16 @@ public abstract class TextRenderType {
                 if (!TextLayoutEngine.sCurrentInWorldRendering || TextLayoutEngine.sUseTextShadersInWorld) {
                     yield sSDFFillTypes.computeIfAbsent(texture, TextRenderType::makeSDFFillType);
                 } else {
-                    yield RenderTypes.textGrayscalePolygonOffset(texture);
+                    yield RenderTypes.textPolygonOffset(texture);
                 }
             }
             case MODE_SDF_STROKE -> sSDFStrokeTypes.computeIfAbsent(texture, TextRenderType::makeSDFStrokeType);
-            case MODE_SEE_THROUGH -> RenderTypes.textGrayscaleSeeThrough(texture);
+            case MODE_SEE_THROUGH -> RenderTypes.textSeeThrough(texture);
             default -> {
                 if (!TextLayoutEngine.sCurrentInWorldRendering || TextLayoutEngine.sUseTextShadersInWorld) {
                     yield sNormalTypes.computeIfAbsent(texture, TextRenderType::makeNormalType);
                 } else {
-                    yield RenderTypes.textGrayscale(texture);
+                    yield RenderTypes.text(texture);
                 }
             }
         };
@@ -315,19 +315,11 @@ public abstract class TextRenderType {
     // compatibility
     @Nonnull
     public static RenderType getOrCreate(Identifier texture, Font.DisplayMode mode, boolean isColor) {
-        if (isColor) {
-            return switch (mode) {
-                case SEE_THROUGH -> RenderTypes.textSeeThrough(texture);
-                case POLYGON_OFFSET -> RenderTypes.textPolygonOffset(texture);
-                default -> RenderTypes.text(texture);
-            };
-        } else {
-            return switch (mode) {
-                case SEE_THROUGH -> RenderTypes.textGrayscaleSeeThrough(texture);
-                case POLYGON_OFFSET -> RenderTypes.textGrayscalePolygonOffset(texture);
-                default -> RenderTypes.textGrayscale(texture);
-            };
-        }
+        return switch (mode) {
+            case SEE_THROUGH -> RenderTypes.textSeeThrough(texture);
+            case POLYGON_OFFSET -> RenderTypes.textPolygonOffset(texture);
+            default -> RenderTypes.text(texture);
+        };
     }
 
     public static RenderPipeline getPipelineForGui(int mode, boolean isBitmapFont) {

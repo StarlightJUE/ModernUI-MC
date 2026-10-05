@@ -183,7 +183,7 @@ public class StandardFontSet extends FontSet {
                         float down = up + (float) glyph.height / mResLevel;
                         return new BakedSheetGlyph(
                                 info,
-                                GlyphRenderTypes.createForGrayscaleTexture(GlyphManager.FONT_SHEET),
+                                GlyphRenderTypes.createForColorTexture(GlyphManager.FONT_SHEET),
                                 GlyphManager.getInstance().getFontTexture().getTextureView(),
                                 glyph.u1,
                                 glyph.u2,
