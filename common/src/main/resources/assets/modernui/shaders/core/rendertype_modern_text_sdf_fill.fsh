@@ -1,19 +1,49 @@
-#version 150
+#version 330
+#extension GL_ARB_separate_shader_objects : require
+
 // This file is part of Modern UI.
-// Copyright (C) 2024 BloCamLimb.
+// Copyright (C) 2024-2026 BloCamLimb.
 // Licensed under LGPL-3.0-or-later.
 
-#moj_import <minecraft:fog.glsl>
-#moj_import <minecraft:dynamictransforms.glsl>
+#if !defined(IS_GUI) && !defined(IS_SEE_THROUGH)
+#include <minecraft:fog.glsl>
+#endif
+
+#include <minecraft:dynamictransforms.glsl>
+#include <minecraft:oit.glsl>
 
 uniform sampler2D Sampler0;
 
-in float sphericalVertexDistance;
-in float cylindricalVertexDistance;
-in vec4 vertexColor;
-in vec2 texCoord0;
+#if !defined(IS_GUI) && !defined(IS_SEE_THROUGH)
+layout(location = 0) in float sphericalVertexDistance;
+layout(location = 1) in float cylindricalVertexDistance;
+#endif
 
-out vec4 fragColor;
+layout(location = 2) in vec4 vertexColor;
+layout(location = 3) in vec2 texCoord0;
+
+#ifndef OIT_ALPHA_ONLY
+layout(location = 0) out vec4 fragColor;
+#endif
+
+vec4 calculateFinalColor(vec4 color) {
+    #ifdef OIT_ACCUMULATE
+    color = sampleColorForAccumulation(color);
+    #endif
+
+    #if !defined(IS_SEE_THROUGH) && !defined(IS_GUI)
+
+    #ifdef OIT_ACCUMULATE
+    vec4 fogColor = vec4(FogColor.rgb * color.a, FogColor.a);
+    #else
+    vec4 fogColor = FogColor;
+    #endif
+
+    color = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, fogColor);
+    #endif
+
+    return color;
+}
 
 void main() {
     // must be BILINEAR sampling
@@ -22,13 +52,17 @@ void main() {
     // apply distance field
     float dist = texColor.a - 127./255. + 0.04;
 
-    /*vec2 grad = vec2(dFdx(dist), dFdy(dist));
-    float afwidth = 0.7 * length(grad);*/ // L2 norm (exact)
-
     // Minecraft uses non-premultiplied alpha blending
     texColor.a = clamp(dist / fwidth(dist) + 0.5, 0.0, 1.0);
 
     vec4 color = texColor * vertexColor * ColorModulator;
-    if (color.a < 0.01) discard; // requires alpha test
-    fragColor = apply_fog(color, sphericalVertexDistance, cylindricalVertexDistance, FogEnvironmentalStart, FogEnvironmentalEnd, FogRenderDistanceStart, FogRenderDistanceEnd, FogColor);
+    if (color.a < 0.01) {
+        discard;
+    }
+
+    #ifdef OIT_ALPHA_ONLY
+    executeAlphaOnlyPhase(gl_FragCoord.z, color.a);
+    #else
+    fragColor = calculateFinalColor(color);
+    #endif
 }

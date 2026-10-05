@@ -32,6 +32,7 @@ import icyllis.modernui.mc.ModernUIMod;
 import icyllis.modernui.mc.MuiModApi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -62,7 +63,11 @@ public abstract class TextRenderType {
     public static final int MODE_UNIFORM_SCALE = 4; // <- must be power of 2
 
     public static final RenderPipeline.Snippet PIPELINE_SNIPPET = RenderPipeline.builder()
-            .withVertexShader(Identifier.withDefaultNamespace("core/rendertype_text_intensity"))
+            .withBindGroupLayout(BindGroupLayouts.GLOBALS)
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+            .withVertexShader(Identifier.withDefaultNamespace("core/text"))
             .withFragmentShader(ModernUIMod.location("core/rendertype_modern_text_normal"))
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP)
@@ -71,16 +76,23 @@ public abstract class TextRenderType {
 
     public static final RenderPipeline PIPELINE_NORMAL = RenderPipeline.builder(PIPELINE_SNIPPET)
             .withLocation(ModernUIMod.location("pipeline/modern_text_normal"))
+            .withBindGroupLayout(BindGroupLayouts.FOG)
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER2)
             .withDepthStencilState(DepthStencilState.DEFAULT)
             .build();
 
     public static final RenderPipeline PIPELINE_GUI_NORMAL = RenderPipeline.builder(PIPELINE_SNIPPET)
             .withLocation(ModernUIMod.location("pipeline/modern_text_gui_normal"))
+            .withShaderDefine("IS_GUI")
             .withDepthStencilState(Optional.empty())
             .build();
 
     public static final RenderPipeline.Snippet PIPELINE_SDF_SNIPPET = RenderPipeline.builder()
-            .withVertexShader(Identifier.withDefaultNamespace("core/rendertype_text_intensity"))
+            .withBindGroupLayout(BindGroupLayouts.GLOBALS)
+            .withBindGroupLayout(BindGroupLayouts.PROJECTION)
+            .withBindGroupLayout(BindGroupLayouts.DYNAMIC_TRANSFORMS)
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER0)
+            .withVertexShader(Identifier.withDefaultNamespace("core/text"))
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP)
             .withPrimitiveTopology(PrimitiveTopology.QUADS)
@@ -89,18 +101,23 @@ public abstract class TextRenderType {
     public static final RenderPipeline PIPELINE_SDF_FILL = RenderPipeline.builder(PIPELINE_SDF_SNIPPET)
             .withLocation(ModernUIMod.location("pipeline/modern_text_sdf_fill"))
             .withFragmentShader(ModernUIMod.location("core/rendertype_modern_text_sdf_fill"))
+            .withBindGroupLayout(BindGroupLayouts.FOG)
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER2)
             .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, -1.0F, -10.0F))
             .build();
 
     public static final RenderPipeline PIPELINE_SDF_STROKE = RenderPipeline.builder(PIPELINE_SDF_SNIPPET)
             .withLocation(ModernUIMod.location("pipeline/modern_text_sdf_stroke"))
             .withFragmentShader(ModernUIMod.location("core/rendertype_modern_text_sdf_stroke"))
+            .withBindGroupLayout(BindGroupLayouts.FOG)
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER2)
             .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true, -1.0F, -10.0F))
             .build();
 
     public static final RenderPipeline PIPELINE_GUI_SDF = RenderPipeline.builder(PIPELINE_SDF_SNIPPET)
             .withLocation(ModernUIMod.location("pipeline/modern_text_gui_sdf"))
             .withFragmentShader(ModernUIMod.location("core/rendertype_modern_text_sdf_fill"))
+            .withShaderDefine("IS_GUI")
             .withDepthStencilState(Optional.empty())
             .build();
 
