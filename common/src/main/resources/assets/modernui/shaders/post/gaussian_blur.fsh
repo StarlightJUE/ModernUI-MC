@@ -1,9 +1,11 @@
-#version 150
+#version 330
+#extension GL_ARB_separate_shader_objects : require
+
 // This file is part of Modern UI.
 // Copyright (C) 2024 BloCamLimb.
 // Licensed under LGPL-3.0-or-later.
 
-#moj_import <minecraft:globals.glsl>
+#include <minecraft:globals.glsl>
 
 uniform sampler2D InSampler;
 
@@ -16,15 +18,20 @@ layout(std140) uniform BlurInfo {
     vec2 BlurDir;
 };
 
-in vec2 texCoord;
+layout(location = 0) in vec2 texCoord;
 
-out vec4 fragColor;
+layout(location = 0) out vec4 fragColor;
 
 void main() {
+    int radius = MenuBlurRadius;
+    if (radius <= 0) {
+        fragColor = texture(InSampler, texCoord);
+        return;
+    }
+
     vec2 oneTexel = 1.0 / InSize;
     vec4 blur = vec4(0.0);
 
-    int radius = MenuBlurRadius;
     // sigma = radius / 2.0
     // base = -0.5 / (sigma * sigma)
     // factor = 1.0 / (sigma * sqrt(2*PI))

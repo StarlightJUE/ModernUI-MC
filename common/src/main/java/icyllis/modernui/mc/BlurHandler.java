@@ -270,10 +270,14 @@ public enum BlurHandler {
 
     // INTERNAL HOOK
     public void processBlurEffect(GraphicsResourceAllocator resourceAllocator) {
-        PostChain blurEffect = minecraft.getShaderManager().getPostChain(
-                GAUSSIAN_BLUR, LevelTargetBundle.MAIN_TARGETS);
-        if (blurEffect != null) {
-            blurEffect.process(minecraft.gameRenderer.mainRenderTarget(), resourceAllocator);
+        try {
+            PostChain blurEffect = minecraft.getShaderManager().getPostChain(
+                    GAUSSIAN_BLUR, LevelTargetBundle.MAIN_TARGETS);
+            if (blurEffect != null) {
+                blurEffect.process(minecraft.gameRenderer.mainRenderTarget(), resourceAllocator);
+            }
+        } catch (Exception e) {
+            ModernUIMod.LOGGER.error(MARKER, "Failed to process blur effect", e);
         }
     }
 }
