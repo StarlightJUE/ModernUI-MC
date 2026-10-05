@@ -32,6 +32,7 @@ import icyllis.modernui.mc.ModernUIMod;
 import icyllis.modernui.mc.MuiModApi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.font.GlyphRenderTypes;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -41,7 +42,9 @@ import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static icyllis.modernui.mc.ModernUIMod.LOGGER;
 import static icyllis.modernui.mc.text.TextLayoutEngine.MARKER;
@@ -290,6 +293,8 @@ public abstract class TextRenderType {
                 bufferSize, false, true, setupState, clearState);
     }*/
 
+    private static final Map<Identifier, GlyphRenderTypes> sGlyphRenderTypes = new ConcurrentHashMap<>();
+
     @Nonnull
     public static RenderType getOrCreate(Identifier texture, int mode) {
         return switch (mode) {
@@ -297,16 +302,16 @@ public abstract class TextRenderType {
                 if (!TextLayoutEngine.sCurrentInWorldRendering || TextLayoutEngine.sUseTextShadersInWorld) {
                     yield sSDFFillTypes.computeIfAbsent(texture, TextRenderType::makeSDFFillType);
                 } else {
-                    yield RenderTypes.textPolygonOffset(texture);
+                    yield getOrCreate(texture, Font.DisplayMode.POLYGON_OFFSET, true);
                 }
             }
             case MODE_SDF_STROKE -> sSDFStrokeTypes.computeIfAbsent(texture, TextRenderType::makeSDFStrokeType);
-            case MODE_SEE_THROUGH -> RenderTypes.textSeeThrough(texture);
+            case MODE_SEE_THROUGH -> getOrCreate(texture, Font.DisplayMode.SEE_THROUGH, true);
             default -> {
                 if (!TextLayoutEngine.sCurrentInWorldRendering || TextLayoutEngine.sUseTextShadersInWorld) {
                     yield sNormalTypes.computeIfAbsent(texture, TextRenderType::makeNormalType);
                 } else {
-                    yield RenderTypes.text(texture);
+                    yield getOrCreate(texture, Font.DisplayMode.NORMAL, true);
                 }
             }
         };
@@ -315,11 +320,9 @@ public abstract class TextRenderType {
     // compatibility
     @Nonnull
     public static RenderType getOrCreate(Identifier texture, Font.DisplayMode mode, boolean isColor) {
-        return switch (mode) {
-            case SEE_THROUGH -> RenderTypes.textSeeThrough(texture);
-            case POLYGON_OFFSET -> RenderTypes.textPolygonOffset(texture);
-            default -> RenderTypes.text(texture);
-        };
+        return sGlyphRenderTypes
+                .computeIfAbsent(texture, GlyphRenderTypes::createForColorTexture)
+                .select(mode);
     }
 
     public static RenderPipeline getPipelineForGui(int mode, boolean isBitmapFont) {
