@@ -467,7 +467,7 @@ public class ModernPreparedText implements Font.PreparedText {
         @Nonnull
         @Override
         public RenderType renderType(Font.DisplayMode displayMode) {
-            return TextRenderType.getOrCreate(run.textureIdentifier, displayMode, run.isBitmapFont);
+            return TextRenderType.getOrCreate(run.textureIdentifier, displayMode, run.isColorEmoji || run.isBitmapFont);
         }
 
         @Nonnull

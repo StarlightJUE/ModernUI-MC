@@ -133,12 +133,7 @@ public class StandardFontSet extends FontSet {
                     Identifier textureName = bitmapFont.getCurrentTextureName();
                     return new BakedSheetGlyph(
                             info,
-                            new GlyphRenderTypes(
-                                    TextRenderType.getOrCreate(textureName, net.minecraft.client.gui.Font.DisplayMode.NORMAL, true),
-                                    TextRenderType.getOrCreate(textureName, net.minecraft.client.gui.Font.DisplayMode.SEE_THROUGH, true),
-                                    TextRenderType.getOrCreate(textureName, net.minecraft.client.gui.Font.DisplayMode.POLYGON_OFFSET, true),
-                                    TextRenderType.getPipelineForGui(TextRenderType.MODE_NORMAL, true)
-                            ),
+                            GlyphRenderTypes.createForColorTexture(textureName),
                             GlyphManager.getInstance().getCurrentTexture(bitmapFont).getTextureView(),
                             glyph.u1,
                             glyph.u2,
@@ -188,12 +183,7 @@ public class StandardFontSet extends FontSet {
                         float down = up + (float) glyph.height / mResLevel;
                         return new BakedSheetGlyph(
                                 info,
-                                new GlyphRenderTypes(
-                                        TextRenderType.getOrCreate(GlyphManager.FONT_SHEET, net.minecraft.client.gui.Font.DisplayMode.NORMAL, true),
-                                        TextRenderType.getOrCreate(GlyphManager.FONT_SHEET, net.minecraft.client.gui.Font.DisplayMode.SEE_THROUGH, true),
-                                        TextRenderType.getOrCreate(GlyphManager.FONT_SHEET, net.minecraft.client.gui.Font.DisplayMode.POLYGON_OFFSET, true),
-                                        TextRenderType.getPipelineForGui(TextRenderType.MODE_NORMAL, true)
-                                ),
+                                GlyphRenderTypes.createForGrayscaleTexture(GlyphManager.FONT_SHEET),
                                 GlyphManager.getInstance().getFontTexture().getTextureView(),
                                 glyph.u1,
                                 glyph.u2,

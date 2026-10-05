@@ -36,6 +36,7 @@ import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 
 import javax.annotation.Nonnull;
@@ -296,16 +297,16 @@ public abstract class TextRenderType {
                 if (!TextLayoutEngine.sCurrentInWorldRendering || TextLayoutEngine.sUseTextShadersInWorld) {
                     yield sSDFFillTypes.computeIfAbsent(texture, TextRenderType::makeSDFFillType);
                 } else {
-                    yield sPolygonOffsetTypes.computeIfAbsent(texture, TextRenderType::makePolygonOffsetType);
+                    yield RenderTypes.textGrayscalePolygonOffset(texture);
                 }
             }
             case MODE_SDF_STROKE -> sSDFStrokeTypes.computeIfAbsent(texture, TextRenderType::makeSDFStrokeType);
-            case MODE_SEE_THROUGH -> sSeeThroughTypes.computeIfAbsent(texture, TextRenderType::makeSeeThroughType);
+            case MODE_SEE_THROUGH -> RenderTypes.textGrayscaleSeeThrough(texture);
             default -> {
                 if (!TextLayoutEngine.sCurrentInWorldRendering || TextLayoutEngine.sUseTextShadersInWorld) {
                     yield sNormalTypes.computeIfAbsent(texture, TextRenderType::makeNormalType);
                 } else {
-                    yield sVanillaTypes.computeIfAbsent(texture, TextRenderType::makeVanillaType);
+                    yield RenderTypes.textGrayscale(texture);
                 }
             }
         };
@@ -313,14 +314,20 @@ public abstract class TextRenderType {
 
     // compatibility
     @Nonnull
-    public static RenderType getOrCreate(Identifier texture, Font.DisplayMode mode, boolean isBitmapFont) {
-        return switch (mode) {
-            case SEE_THROUGH -> sSeeThroughTypes.computeIfAbsent(texture, TextRenderType::makeSeeThroughType);
-            case POLYGON_OFFSET -> sPolygonOffsetTypes.computeIfAbsent(texture, TextRenderType::makePolygonOffsetType);
-            default -> isBitmapFont || (TextLayoutEngine.sCurrentInWorldRendering && !TextLayoutEngine.sUseTextShadersInWorld)
-                    ? sVanillaTypes.computeIfAbsent(texture, TextRenderType::makeVanillaType)
-                    : sNormalTypes.computeIfAbsent(texture, TextRenderType::makeNormalType);
-        };
+    public static RenderType getOrCreate(Identifier texture, Font.DisplayMode mode, boolean isColor) {
+        if (isColor) {
+            return switch (mode) {
+                case SEE_THROUGH -> RenderTypes.textSeeThrough(texture);
+                case POLYGON_OFFSET -> RenderTypes.textPolygonOffset(texture);
+                default -> RenderTypes.text(texture);
+            };
+        } else {
+            return switch (mode) {
+                case SEE_THROUGH -> RenderTypes.textGrayscaleSeeThrough(texture);
+                case POLYGON_OFFSET -> RenderTypes.textGrayscalePolygonOffset(texture);
+                default -> RenderTypes.textGrayscale(texture);
+            };
+        }
     }
 
     public static RenderPipeline getPipelineForGui(int mode, boolean isBitmapFont) {
