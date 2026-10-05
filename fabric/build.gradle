@@ -83,11 +83,20 @@ dependencies {
     }
 
     compileOnly("org.lwjgl:lwjgl-vulkan:3.4.1")
-    compileOnly("org.lwjgl:lwjgl-glfw:3.4.1")
-    compileOnly("org.lwjgl:lwjgl-tinyfd:3.4.1")
     testCompileOnly("org.lwjgl:lwjgl-vulkan:3.4.1")
-    testCompileOnly("org.lwjgl:lwjgl-glfw:3.4.1")
-    testCompileOnly("org.lwjgl:lwjgl-tinyfd:3.4.1")
+
+    implementation("org.lwjgl:lwjgl-glfw:3.4.1") {
+        transitive = false
+    }
+    shadow("org.lwjgl:lwjgl-glfw:3.4.1") {
+        transitive = false
+    }
+    implementation("org.lwjgl:lwjgl-tinyfd:3.4.1") {
+        transitive = false
+    }
+    shadow("org.lwjgl:lwjgl-tinyfd:3.4.1") {
+        transitive = false
+    }
 
     //implementation("com.vladsch.flexmark:flexmark:${flexmark_version}")
 
