@@ -212,6 +212,7 @@ public abstract class UIManager implements LifecycleOwner {
         MuiModApi.addOnRenderFrameListener(this::onRenderFrame);
 
         mUiThread = new Thread(this::run, "UI thread");
+        mUiThread.setDaemon(true);
         mUiThread.start();
         // integrated with Minecraft
         AudioManager.getInstance().initialize(/*integrated*/ true);
@@ -1228,9 +1229,27 @@ public abstract class UIManager implements LifecycleOwner {
         //BlurHandler.INSTANCE.closeEffect();
         FontResourceManager.getInstance().close();
         ImageStore.getInstance().clear();
-        System.gc();
-        Core.requireImmediateContext().unref();
         if (sInstance != null) {
+            sInstance.mRunning = false;
+            if (sInstance.mLayerTexture != null) {
+                sInstance.mLayerTexture.close();
+                sInstance.mLayerTexture = null;
+            }
+            if (sInstance.mLayerTextureView != null) {
+                sInstance.mLayerTextureView.close();
+                sInstance.mLayerTextureView = null;
+            }
+            if (sInstance.mLayerTextureView_Vulkan != null) {
+                sInstance.mLayerTextureView_Vulkan.close();
+                sInstance.mLayerTextureView_Vulkan = null;
+            }
+            if (sInstance.mRoot != null) {
+                sInstance.mRoot.cancelAndNotifyRender();
+            }
+            if (sInstance.mLooper != null) {
+                sInstance.mLooper.quit();
+            }
+            sInstance.mUiThread.interrupt();
             AudioManager.getInstance().close();
             try {
                 // in case of GLFW is terminated too early
@@ -1239,6 +1258,8 @@ public abstract class UIManager implements LifecycleOwner {
                 e.printStackTrace();
             }
         }
+        System.gc();
+        Core.requireImmediateContext().unref();
         LOGGER.debug(MARKER, "Quited Modern UI");
     }
 
@@ -1357,7 +1378,9 @@ public abstract class UIManager implements LifecycleOwner {
                 }
                 mLastFrameTask = task;
                 try {
-                    mRenderLock.wait();
+                    while (mRunning && mLastFrameTask != null) {
+                        mRenderLock.wait(100);
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -1382,6 +1405,16 @@ public abstract class UIManager implements LifecycleOwner {
                 } else {
                     return null;
                 }
+            }
+        }
+
+        void cancelAndNotifyRender() {
+            synchronized (mRenderLock) {
+                if (mLastFrameTask != null) {
+                    mLastFrameTask.close();
+                    mLastFrameTask = null;
+                }
+                mRenderLock.notifyAll();
             }
         }
 
