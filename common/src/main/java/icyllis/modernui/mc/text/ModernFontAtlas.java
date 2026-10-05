@@ -202,18 +202,17 @@ public class ModernFontAtlas extends AbstractTexture implements Dumpable {
         }
 
         // include border
-        int bpp = mMaskFormat == Engine.MASK_FORMAT_ARGB ? 4 : 1;
         var commandEncoder = RenderSystem.getDevice().createCommandEncoder();
         commandEncoder.writeToTexture(getTexture(), pixels,
-                0, rect.x(), rect.y(),
-                rect.width(), rect.height(),
-                rect.width() * bpp);
+                0, 0,
+                rect.x(), rect.y(),
+                rect.width(), rect.height());
         if (mUseMipmaps) {
             assert mipPixels != null;
             commandEncoder.writeToTexture(getTexture(), mipPixels.getPixelBytes(),
-                    1, rect.x() / 2, rect.y() / 2,
-                    rect.width() / 2, rect.height() / 2,
-                    (rect.width() / 2) * bpp);
+                    1, 0,
+                    rect.x() / 2, rect.y() / 2,
+                    rect.width() / 2, rect.height() / 2);
         }
         /*int rowBytes = rect.width() * ColorInfo.bytesPerPixel(colorType);
         boolean res = ((GLDevice) mContext.getDevice()).writePixels(
