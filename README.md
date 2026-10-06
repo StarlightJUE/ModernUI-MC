@@ -1,4 +1,9 @@
 # Modern UI for Minecraft
+
+> [!NOTE]
+> **非官方野生适配版本 (Unofficial Port)**  
+> 本分支为针对 **Minecraft 26.3 (Fabric)** 的非官方野生适配版本，可能存在亿些 bug。  
+> 开源许可证保持不变：[GNU Lesser General Public License v3.0 (LGPL-3.0)](LICENSE)。
 [![CurseForge](http://cf.way2muchnoise.eu/full_352491_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 [![CurseForge](http://cf.way2muchnoise.eu/versions/For%20Minecraft_352491_all.svg)](https://www.curseforge.com/minecraft/mc-mods/modern-ui)
 
