@@ -211,13 +211,12 @@ public abstract class UIManager implements LifecycleOwner {
         });
         MuiModApi.addOnRenderFrameListener(this::onRenderFrame);
 
+        mRunning = true;
         mUiThread = new Thread(this::run, "UI thread");
         mUiThread.setDaemon(true);
         mUiThread.start();
         // integrated with Minecraft
         AudioManager.getInstance().initialize(/*integrated*/ true);
-
-        mRunning = true;
     }
 
     @RenderThread
@@ -349,18 +348,21 @@ public abstract class UIManager implements LifecycleOwner {
     // Called when open a screen from Modern UI, or back to the screen
     @MainThread
     public void initScreen(@Nonnull MuiScreen screen) {
+        LOGGER.info(MARKER, "initScreen: target={}, current mScreen={}", screen, mScreen);
         if (mScreen != screen) {
             if (mScreen != null) {
-                LOGGER.warn(MARKER, "You cannot set multiple screens.");
+                LOGGER.warn(MARKER, "You cannot set multiple screens. Current: {}, New: {}", mScreen, screen);
                 return;
             }
-            mRoot.mHandler.post(this::suppressLayoutTransition);
-            mFragmentController.getFragmentManager().beginTransaction()
-                    .add(fragment_container, screen.getFragment(), "main")
-                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                    .setReorderingAllowed(true)
-                    .commit();
-            mRoot.mHandler.post(this::restoreLayoutTransition);
+            mRoot.mHandler.post(() -> {
+                suppressLayoutTransition();
+                mFragmentController.getFragmentManager().beginTransaction()
+                        .add(fragment_container, screen.getFragment(), "main")
+                        .setTransition(FragmentTransaction.TRANSIT_NONE)
+                        .setReorderingAllowed(true)
+                        .commitNow();
+                restoreLayoutTransition();
+            });
         }
         mScreen = screen;
         // ensure it's resized
@@ -1070,12 +1072,14 @@ public abstract class UIManager implements LifecycleOwner {
             LOGGER.warn(MARKER, "No screen to remove, try to remove {}, but have {}", target, screen);
             return;
         }
-        mRoot.mHandler.post(this::suppressLayoutTransition);
-        mFragmentController.getFragmentManager().beginTransaction()
-                .remove(screen.getFragment())
-                .setReorderingAllowed(true)
-                .commit();
-        mRoot.mHandler.post(this::restoreLayoutTransition);
+        mRoot.mHandler.post(() -> {
+            suppressLayoutTransition();
+            mFragmentController.getFragmentManager().beginTransaction()
+                    .remove(screen.getFragment())
+                    .setReorderingAllowed(true)
+                    .commitNow();
+            restoreLayoutTransition();
+        });
         mRoot.mRawDrawHandlers.clear();
         mScreen = null;
         minecraft.getWindow().selectCursor(CursorType.DEFAULT);
@@ -1342,6 +1346,21 @@ public abstract class UIManager implements LifecycleOwner {
             }
         }
 
+        private void ensureViewTreeVisible(View view) {
+            if (view == null) return;
+            if (view.getAlpha() < 1.0f) {
+                view.setAlpha(1.0f);
+            }
+            if (view.getTransitionAlpha() < 1.0f) {
+                view.setTransitionAlpha(1.0f);
+            }
+            if (view instanceof ViewGroup vg) {
+                for (int i = 0; i < vg.getChildCount(); i++) {
+                    ensureViewTreeVisible(vg.getChildAt(i));
+                }
+            }
+        }
+
         @Override
         protected Canvas beginDrawLocked(int width, int height) {
             synchronized (mRenderLock) {
@@ -1361,7 +1380,10 @@ public abstract class UIManager implements LifecycleOwner {
                     }
                 }
                 if (mSurface != null && width > 0 && height > 0) {
-                    //mSurface.getCanvas().clear(0);
+                    if (mScreen != null) {
+                        ensureViewTreeVisible(mDecor);
+                    }
+                    mSurface.getCanvas().clear(0);
                     return new ArcCanvas(mSurface.getCanvas());
                 }
                 return null;
